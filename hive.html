@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
+    <title>Name Banane</title>
+    <script type="text/javascript" src="http://mbostock.github.com/d3/d3.min.js"></script>
+    <script type="text/javascript" src="http://mbostock.github.com/d3/d3.behavior.min.js"></script>
+    <style type="text/css">
+        svg {
+            border: solid 1px #aaa;
+            background: #eee;
+        }
+
+        path {
+            fill: lightsteelblue;
+            stroke: #000;
+            stroke-width: .5px;
+        }
+    </style>
+  </head>
+  <body>
+    <script type="text/javascript">
+
+var w = 960,
+    h = 600,
+    p = 50;
+    
+var diameter = 50;
+
+var offset = diameter / Math.sqrt(3) * 3 / 4;
+var data = [];
+d3.range(0 + p, w - p, Math.sqrt(3) * diameter / 2).map(function(v1) {
+    d3.range(0 + p, h - p, diameter * 3 / 4).map(function(v2, i) {
+        data.push({
+            centroid: [i % 2 ? v1 + offset : v1, v2]
+        });
+    });
+});
+
+var svg = d3.select("body")
+    .append("svg:svg")
+    .attr("width", w)
+    .attr("height", h)
+    .attr("pointer-events", "all");
+
+update();
+
+function update() {
+    svg.selectAll("path")
+        .data(data.map(function(d) { return hex(d.centroid, diameter); }))
+        .attr("d", function(d) { return "M" + d.join("L") + "Z"; })
+        .enter()
+        .append("svg:path")
+        .attr("d", function(d) { return "M" + d.join("L") + "Z"; })
+        .on("click", click)
+        .on("mouseover", mouseover)
+        .on("mouseout", mouseout);
+    svg
+        .call(d3.behavior.zoom().on("zoom", move));
+}
+
+function click(d, i) {
+    console.log("click", d, i);
+    d3.select(this)
+        .style("fill", "yellow");
+}
+
+function mouseover(d, i) {
+    d3.select(this)
+        .style("fill", "red");
+}
+
+function mouseout(d, i) {
+    d3.select(this)
+        .style("fill", "lightsteelblue");
+}
+
+function move() {
+    //svg.selectAll("path")
+    //    .attr("transform",
+    //        "translate(" + d3.event.translate + ")"
+    //        + "scale(" + d3.event.scale + ")");
+}
+
+function hex(center, diameter, tilted) {
+    if (center == null || center.length != 2) throw new Error("center must be an array [x, y]");
+    if (diameter == null) diameter = 0;
+    if (tilted == null) tilted = false;
+    var a = diameter / 2, 
+        b = (Math.sqrt(3) * a) / 2,
+        x = center[0],
+        y = center[1];
+    return tilted ? 
+        [[x - a / 2, y - b], [x - a, y], [x - a / 2, y + b], [x + a / 2, y + b], [x + a, y], [x + a / 2, y - b]] : 
+        [[x - b, y - a / 2], [x - b, y + a / 2], [x, y + a], [x + b, y + a / 2], [x + b, y - a / 2], [x, y - a]];
+};
+
+    </script>
+  </body>
+</html>
