@@ -21,8 +21,8 @@
   <body>
     <script type="text/javascript">
 
-var w = 960,
-    h = 600,
+var w = 444,
+    h = 444,
     p = 50;
     
 var diameter = 50;
@@ -43,20 +43,33 @@ var svg = d3.select("body")
     .attr("height", h)
     .attr("pointer-events", "all");
 
-update();
-
-function update() {
-    svg.selectAll("path")
-        .data(data.map(function(d) { return hex(d.centroid, diameter); }))
+function update(lettermap) {
+    var hexagons = svg.selectAll("path")
+        .data(data.map(function(d) {
+            return hex(d.centroid, diameter);
+        }))
         .attr("d", function(d) { return "M" + d.join("L") + "Z"; })
-        .enter()
+      .enter()
         .append("svg:path")
         .attr("d", function(d) { return "M" + d.join("L") + "Z"; })
         .on("click", click)
         .on("mouseover", mouseover)
         .on("mouseout", mouseout);
-    svg
-        .call(d3.behavior.zoom().on("zoom", move));
+
+    var text = svg.selectAll("text")
+        .data(data.map(function(d) {
+            return hextext(d.centroid, diameter, lettermap);
+        }));
+
+        text.exit().remove();
+
+        text.enter().append("text")
+            .text(function(d) { return d.txt; })
+            .attr("font-size", "10px");
+
+        text
+            .attr("x", function(d) { return d.x })
+            .attr("y", function(d) { return d.y });
 }
 
 function click(d, i) {
@@ -75,13 +88,6 @@ function mouseout(d, i) {
         .style("fill", "lightsteelblue");
 }
 
-function move() {
-    //svg.selectAll("path")
-    //    .attr("transform",
-    //        "translate(" + d3.event.translate + ")"
-    //        + "scale(" + d3.event.scale + ")");
-}
-
 function hex(center, diameter, tilted) {
     if (center == null || center.length != 2) throw new Error("center must be an array [x, y]");
     if (diameter == null) diameter = 0;
@@ -93,6 +99,34 @@ function hex(center, diameter, tilted) {
     return tilted ? 
         [[x - a / 2, y - b], [x - a, y], [x - a / 2, y + b], [x + a / 2, y + b], [x + a, y], [x + a / 2, y - b]] : 
         [[x - b, y - a / 2], [x - b, y + a / 2], [x, y + a], [x + b, y + a / 2], [x + b, y - a / 2], [x, y - a]];
+};
+
+var lettermap = {5: {3: "L", 1: "J"},
+                 6: {2: "U"},
+                 7: {1: "C", 3: "D"},
+                 8: {0: "Y", 4: "Y"}};
+_xm = offset;
+_ym = diameter * 3 / 4;
+function to_xpos(xcoord) { return 50 + (_xm * xcoord); }
+function to_xcoord(xpos) { return Math.round((xpos - 50) / _xm); }
+function to_ypos(ycoord) { return 50 + (_ym * ycoord); }
+function to_ycoord(ypos) { return Math.round((ypos - 50) / _ym); }
+update(lettermap);
+
+function hextext(center, diameter, lettermap, tilted) {
+    if (center == null || center.length != 2) throw new Error("center must be an array [x, y]");
+    if (diameter == null) diameter = 0;
+    if (lettermap == null) throw new Error("lettermap must be present to win");
+    if (tilted == null) tilted = false;
+    var xp = center[0],
+        yp = center[1],
+        xc = to_xcoord(xp),
+        yc = to_ycoord(yp),
+        t = "";
+    if (xc in lettermap && yc in lettermap[xc]) {
+        t = lettermap[xc][yc];
+    }
+    return {"x": xp, "y": yp, "txt": t};
 };
 
     </script>
